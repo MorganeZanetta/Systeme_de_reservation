@@ -27,11 +27,11 @@ L'application repose sur une architecture **MVC (Modèle-Vue-Contrôleur)** robu
    composer install
   Cela générera automatiquement le dossier vendor/ et l'autoloader nécessaire au bon fonctionnement du projet.
 
-Configuration :
+🔧 Configuration :
 Configurez vos accès à la base de données dans App/Core/Database.php.
 Importez le fichier de schéma SQL (mpd_resa.sql) dans votre serveur MySQL.
 
-Serveur Web :
+🗄️ Serveur Web :
 Configurez votre hôte virtuel (Apache/Nginx) pour que la racine (DocumentRoot) pointe vers le dossier /Public.
 
 🛡️ Sécurité
@@ -42,20 +42,20 @@ XSS : Toutes les entrées utilisateur sont traitées par htmlspecialchars() lors
 Accès : Séparation stricte et vérification des sessions entre les accès Utilisateur et Administrateur.
 
 🛠️ Maintenance & Audit
-Système de Logs
+Système de Logs :
 Chaque action critique (création, modification, suppression) génère un log dans la table reservation_log. 
 Les données old_data et new_data sont stockées au format JSON, permettant une comparaison précise des états.
 
-Ajout de fonctionnalités :
+💡 Ajout de fonctionnalités :
 Créez vos classes dans App/Models/.
 Développez la logique métier dans les contrôleurs (App/Controllers/).
-Déclarez la nouvelle route dans le routeur centralisé (public/index.php).
+Déclarez la nouvelle route dans le routeur centralisé (Public/index.php).
 Exécutez composer dump-autoload -o si vous avez créé de nouveaux espaces de noms pour optimiser le chargement.
 
-⚠️ Notes importantes :
+⚠️ Note importante :
 Le dossier /vendor/ est généré automatiquement par Composer.
 
-👥 Auteur
-[Morgane ZANETTA]
-Projet réalisé dans le cadre de mon stage de 1ère année en Bachelor développement, intelligence artificielle et cybersécurité.
+👥 Auteur :
+Morgane ZANETTA
+Projet réalisé dans le cadre de mon stage de 1ère année en Bachelor développement, intelligence artificielle et cybersécurité au sein de l'école d'ingénieurs MIRA à Ajaccio.
 Ce projet est maintenu selon les standards PSR-4 et utilise les fonctionnalités modernes de PHP 8.

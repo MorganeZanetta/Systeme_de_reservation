@@ -1,10 +1,12 @@
-// Attend que tout le contenu HTML soit chargé pour exécuter le script
+// Attend que le contenu HTML (DOM) soit entièrement chargé pour éviter toute erreur de sélection d'éléments et exécuter le script
 document.addEventListener("DOMContentLoaded", function () {
+  // --- SECTION 1 : Initialisation des variables et sélecteurs DOM ---
   // Sélection des éléments de saisie et d'affichage dans le DOM
   const calendrierContainer = document.querySelector("#mon_calendrier_fixe"); // Le conteneur du calendrier
   const selectSalles = document.getElementById("choix_salle_reservation"); // Liste déroulante des salles
   const selectMateriels = document.getElementById("choix_materiel_reservation"); // Liste déroulante des matériels
   const selectCreneaux = document.getElementById("creneau_reservation"); // Sélection du créneau (Matin/AM/Journée)
+  // Champs cachés/visibles pour synchroniser les données entre le calendrier et le formulaire
   // Champs de formulaire pour stocker les dates (format humain et format ISO)
   const inputDebut = document.getElementById("date_debut_reservation");
   const inputFin = document.getElementById("date_fin_reservation");
@@ -14,15 +16,16 @@ document.addEventListener("DOMContentLoaded", function () {
   const idRes = document.getElementById("id_reservation_en_cours")?.value || 0;
   let calendarInstance; // Variable pour stocker l'instance Flatpickr
 
-  // Convertit une date "jj/mm/aaaa" en "aaaa-mm-jj" pour les comparaisons
+  // Convertit une date "jj/mm/aaaa" en "aaaa-mm-jj" pour faciliter les comparaisons logiques
   function convertToIso(dateStr) {
     const [d, m, y] = dateStr.split("/");
     return `${y}-${m}-${d}`;
   }
-
+  // --- SECTION 2 : Logique de rafraîchissement ---
   // Fonction principale qui met à jour le calendrier selon les choix de l'utilisateur
   function rafraichirCalendrier() {
     if (!calendrierContainer) return; // Arrête la fonction si le calendrier n'existe pas dans la page
+    // Construction des paramètres pour la requête API
     // Récupère les valeurs sélectionnées dans les listes déroulantes
     const salles = Array.from(selectSalles.selectedOptions).map((o) => o.value);
     const materiels = Array.from(selectMateriels.selectedOptions).map(
@@ -32,23 +35,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const params = new URLSearchParams();
     salles.forEach((id) => params.append("salles[]", id));
     materiels.forEach((id) => params.append("materiels[]", id));
-    // Appelle l'API pour récupérer les dates déjà réservées
+    // Appel API pour récupérer les dates déjà occupées (indisponibilités)
     fetch(
       `index.php?action=obtenirIndisponibilites&ignoreId=${idRes}&${params.toString()}`,
     )
       .then((response) => response.json()) // Transforme la réponse en JSON
       .then((data) => {
-        if (calendarInstance) calendarInstance.destroy(); // Détruit l'instance précédente pour éviter les bugs
+        if (calendarInstance) calendarInstance.destroy(); // Nettoyage : Détruit l'instance précédente pour éviter les bugs
+        // Filtrage de sécurité : on exclut la réservation en cours (si édition) pour ne pas qu'elle se bloque elle-même
         // On retire la réservation en cours du calcul des conflits.
         // Cela rend cette réservation "invisible" pour les règles de sécurité ci-dessous.
         const autresReservations = data.filter(
           (res) => parseInt(res.id_reservation) !== idRes,
         );
-
+        // Préparation des dates à "griser" dans Flatpickr (format de plage {from, to})
         const datesReservees = autresReservations
           .filter((res) => {
             const selected = selectCreneaux.value;
             const creneau = res.creneau_reservation;
+            // Logique d'intersection : définit si une réservation existante entre en conflit avec le créneau sélectionné
             if (selected === "Journée complète")
               // Bloque tout
               return (
@@ -73,7 +78,6 @@ document.addEventListener("DOMContentLoaded", function () {
             from: res.date_debut_reservation.split("-").reverse().join("/"),
             to: res.date_fin_reservation.split("-").reverse().join("/"),
           }));
-
         // Sécurité : Vérifie si la date déjà choisie est devenue invalide après le changement de salle/créneau
         if (inputDebutIso.value) {
           const debutIso = inputDebutIso.value;
@@ -92,7 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "";
           }
         }
-
+        // --- SECTION 3 : Configuration Flatpickr ---
         // Initialisation de Flatpickr
         calendarInstance = flatpickr(calendrierContainer, {
           inline: true,
@@ -107,13 +111,13 @@ document.addEventListener("DOMContentLoaded", function () {
             ...datesReservees, // Bloque les dates récupérées de l'API
           ],
 
-          // Gère le changement de date par l'utilisateur
+          // Gère la sélection utilisateur et la vérification des conflits en temps réel
           onChange: function (selectedDates, dateStr, instance) {
             if (selectedDates.length === 2) {
               const [debut, fin] = selectedDates;
               let estValide = true;
               let d = new Date(debut);
-              // Parcourt chaque jour pour vérifier l'absence de conflit dans la plage choisie
+              // Boucle de validation : Parcourt chaque jour pour vérifier l'absence de conflit dans la plage choisie
               while (d <= fin) {
                 const dIso = instance.formatDate(d, "Y-m-d");
                 if (
@@ -130,7 +134,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 d.setDate(d.getDate() + 1);
               }
-              // Gestion de l'erreur
+              // Réinitialisation si conflit détecté
               if (!estValide) {
                 alert(
                   "Période invalide : votre sélection inclut des jours indisponibles.",
@@ -157,67 +161,90 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             verifierEtapes(); // Appel de validation externe
           },
-
-          // Personnalisation visuelle de chaque cellule de jour
+          // --- SECTION 4 : Customisation visuelle (onDayCreate) ---
           onDayCreate: function (dObj, dStr, fp, dayElem) {
-            if (
-              dayElem.dateObj.getDay() === 0 ||
-              dayElem.dateObj.getDay() === 6
-            )
+            // 1. Gestion des weekends
+            const jourSemaine = dayElem.dateObj.getDay();
+            if (jourSemaine === 0 || jourSemaine === 6) {
               dayElem.classList.add("is-weekend");
+            }
 
+            // 2. Nettoyage DOM : supprime les anciens badges/classes pour éviter les duplicatas
+            dayElem.classList.remove("res-mixte", "res-salle", "res-materiel");
+            dayElem
+              .querySelectorAll(".creneau-badge")
+              .forEach((b) => b.remove());
+
+            // 3. Préparation des données
             const dateFormatted = fp.formatDate(dayElem.dateObj, "Y-m-d");
-            const idsSallesSelect = Array.from(
-              selectSalles.selectedOptions,
-            ).map((o) => o.value);
-            const idsMaterielsSelect = Array.from(
-              selectMateriels.selectedOptions,
-            ).map((o) => o.value);
 
-            // Recherche des réservations pour ce jour
+            // Utilisation de Set pour une recherche plus rapide (O(1))
+            const idsSallesSelect = new Set(
+              Array.from(selectSalles.selectedOptions).map((o) => o.value),
+            );
+            const idsMaterielsSelect = new Set(
+              Array.from(selectMateriels.selectedOptions).map((o) => o.value),
+            );
+
+            // 4. Recherche des réservations
+            // Filtre les données pour le jour actuel
             const resDuJour = data.filter(
               (res) =>
                 dateFormatted >= res.date_debut_reservation &&
                 dateFormatted <= res.date_fin_reservation,
             );
+
+            if (resDuJour.length === 0) return; // Rien à afficher
+
+            // 5. Logique des conflits
+            // Détection de conflits basés sur les IDs sélectionnés via Set (performance optimale)
             const conflitSalle = resDuJour.some((res) =>
-              idsSallesSelect.includes(res.id_salle),
+              idsSallesSelect.has(res.id_salle),
             );
             const conflitMateriel = resDuJour.some((res) =>
-              idsMaterielsSelect.includes(res.id_materiel),
+              idsMaterielsSelect.has(res.id_materiel),
             );
-            // Calcul de densité visuelle
+            // Calcul de priorité CSS pour le type d'affichage (conflit simple vs mixte)
             const nbConflits =
               (conflitSalle ? 1 : 0) + (conflitMateriel ? 1 : 0);
             const totalGlobal = nbConflits + resDuJour.length;
 
-            // Application des classes CSS selon la densité
+            // Application des classes CSS
             if (totalGlobal >= 2) {
               dayElem.classList.add("res-mixte");
-            } else if (
-              conflitSalle ||
-              (resDuJour.length > 0 && parseInt(resDuJour[0].nb_salles) > 0)
-            ) {
+            } else if (conflitSalle || resDuJour[0].nb_salles > 0) {
               dayElem.classList.add("res-salle");
-            } else if (
-              conflitMateriel ||
-              (resDuJour.length > 0 && parseInt(resDuJour[0].nb_materiels) > 0)
-            ) {
+            } else if (conflitMateriel || resDuJour[0].nb_materiels > 0) {
               dayElem.classList.add("res-materiel");
             }
 
-            // Ajout du badge (M/AM/J)
-            if (resDuJour.length > 0) {
+            // 6. Logique des badges
+            // Génération des badges J/M/AM dans la cellule du jour
+            const aMatin = resDuJour.some((r) =>
+              r.creneau_reservation.includes("Matin"),
+            );
+            const aApresMidi = resDuJour.some((r) =>
+              r.creneau_reservation.includes("Après-midi"),
+            );
+            const aJournee = resDuJour.some((r) =>
+              r.creneau_reservation.includes("Journée complète"),
+            );
+
+            const badgesAAfficher = [];
+            if (aJournee || (aMatin && aApresMidi)) {
+              badgesAAfficher.push("J");
+            } else {
+              if (aMatin) badgesAAfficher.push("M");
+              if (aApresMidi) badgesAAfficher.push("AM");
+            }
+
+            // Ajout des badges au DOM
+            badgesAAfficher.forEach((texte) => {
               const badge = document.createElement("span");
-              const c = resDuJour[0].creneau_reservation;
-              badge.textContent = c.includes("Matin")
-                ? "M"
-                : c.includes("Après-midi")
-                  ? "AM"
-                  : "J";
+              badge.textContent = texte;
               badge.className = "creneau-badge";
               dayElem.appendChild(badge);
-            }
+            });
           },
         });
       })
@@ -235,3 +262,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
   rafraichirCalendrier(); // Appel initial
 });
+

@@ -8,7 +8,7 @@ L'application repose sur une architecture **MVC (Modèle-Vue-Contrôleur)** robu
 
 * **Backend** : PHP 8.1+, MySQL 5.7+ (pour le support JSON natif).
 * **Autoloading** : Standard PSR-4 via Composer.
-* **Sécurité** : Protection SQL (PDO), CSRF (Jetons), XSS (Filtrage).
+* **Sécurité** : Protection SQL (PDO), CSRF (Jetons), XSS (Filtrage), Authentification (Algorithme bcrypt).
 * **Traçabilité** : Système d'audit (`ReservationLog`) stockant les historiques d'états au format JSON.
 
 ## 📦 Installation

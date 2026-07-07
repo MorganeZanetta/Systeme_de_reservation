@@ -197,14 +197,14 @@ document.addEventListener("DOMContentLoaded", function () {
             if (resDuJour.length === 0) return; // Rien à afficher
 
             // 5. Logique des conflits
-            // Détection de conflits basés sur les IDs sélectionnés via Set (performance optimale)
+            // Détection de conflits basés sur les IDs sélectionnés via Set
             const conflitSalle = resDuJour.some((res) =>
               idsSallesSelect.has(res.id_salle),
             );
             const conflitMateriel = resDuJour.some((res) =>
               idsMaterielsSelect.has(res.id_materiel),
             );
-            // Calcul de priorité CSS pour le type d'affichage (conflit simple vs mixte)
+            // Calcul de priorité CSS pour le type d'affichage
             const nbConflits =
               (conflitSalle ? 1 : 0) + (conflitMateriel ? 1 : 0);
             const totalGlobal = nbConflits + resDuJour.length;

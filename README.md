@@ -21,8 +21,8 @@ L'application repose sur une architecture **MVC (Modèle-Vue-Contrôleur)** robu
 
 ### Étapes d'installation
 1. **Cloner le projet** sur votre machine.
-2. **Installer les dépendances** :
-   Ouvrez un terminal à la racine du dossier et exécutez :
+2. **Dépendances** :
+   Assurez-vous d'avoir un fichier composer.json valide, puis exécutez dans un terminal à la racine du dossier :
    ```bash
    composer install
   Cela générera automatiquement le dossier vendor/ et l'autoloader nécessaire au bon fonctionnement du projet.
@@ -32,13 +32,14 @@ Configurez vos accès à la base de données dans App/Core/Database.php.
 Importez le fichier de schéma SQL (mpd_resa.sql) dans votre serveur MySQL.
 
 🗄️ Serveur Web :
-Configurez votre hôte virtuel (Apache/Nginx) pour que la racine (DocumentRoot) pointe vers le dossier /Public.
+Configurez votre VirtualHost pour pointer vers le dossier /Public.
 
-🛡️ Sécurité
-Le système intègre plusieurs couches de protection :
+🛡️ Sécurité :
+Le système intègre plusieurs couches de protection.
 Injection SQL : Toutes les requêtes sont préparées via PDO.
 CSRF : Chaque formulaire POST utilise un jeton csrf_token unique, vérifié côté contrôleur.
 XSS : Toutes les entrées utilisateur sont traitées par htmlspecialchars() lors de l'affichage.
+Authentification : Implémentation d'un hachage des mots de passe avec l'algorithme bcrypt (password_hash et password_verify).
 Accès : Séparation stricte et vérification des sessions entre les accès Utilisateur et Administrateur.
 
 🛠️ Maintenance & Audit
@@ -50,12 +51,13 @@ Les données old_data et new_data sont stockées au format JSON, permettant une 
 Créez vos classes dans App/Models/.
 Développez la logique métier dans les contrôleurs (App/Controllers/).
 Déclarez la nouvelle route dans le routeur centralisé (Public/index.php).
-Exécutez composer dump-autoload -o si vous avez créé de nouveaux espaces de noms pour optimiser le chargement.
+Utilisez composer dump-autoload -o après avoir créé de nouvelles classes ou espaces de noms pour optimiser le chargement automatique.
+Utilisez composer update pour télécharger les dernières versions autorisées de vos dépendances et synchroniser votre fichier composer.lock.
 
 ⚠️ Note importante :
-Le dossier /vendor/ est généré automatiquement par Composer.
+Le dossier /vendor/ est généré automatiquement par Composer (ne pas tenir compte du fichier vendor présent).
 
 👥 Auteur :
 Morgane ZANETTA
-Projet réalisé dans le cadre de mon stage de 1ère année en Bachelor développement, intelligence artificielle et cybersécurité au sein de l'école d'ingénieurs MIRA à Ajaccio.
+Projet réalisé dans le cadre de mon stage de 1ère année en Bachelor développement, intelligence artificielle et cybersécurité au sein de l'école d'ingénieurs MIRA spécialisée en développement, robotique et intelligence artificielle à Ajaccio.
 Ce projet est maintenu selon les standards PSR-4 et utilise les fonctionnalités modernes de PHP 8.

@@ -48,9 +48,13 @@ Chaque action critique (création, modification, suppression) génère un log da
 Les données old_data et new_data sont stockées au format JSON, permettant une comparaison précise des états.
 
 💡 Ajout de fonctionnalités :
-Créez vos classes dans App/Models/.
-Développez la logique métier dans les contrôleurs (App/Controllers/).
-Déclarez la nouvelle route dans le routeur centralisé (Public/index.php).
+Pour étendre l'application, suivez ces étapes :
+Données (Modèles) : Créez vos classes dans App/Models/ pour gérer l'interaction avec la base de données.
+Logique (Contrôleurs) : Développez le traitement des données et la logique métier dans App/Controllers/.
+Routes : Déclarez votre nouvelle route dans le routeur centralisé (Public/index.php).
+Interface (Vues) : Créez ou modifiez le fichier de vue correspondant dans App/Views/.
+Note : Si votre nouvelle vue nécessite des fonctionnalités interactives (comme le calendrier Flatpickr), n'oubliez pas d'inclure les assets JS/CSS nécessaires et de définir la logique onDayCreate dans votre fichier script dédié.
+Style (CSS) : Apportez vos modifications de mise en forme dans votre fichier de style (Public/css/style.css).
 Utilisez composer dump-autoload -o après avoir créé de nouvelles classes ou espaces de noms pour optimiser le chargement automatique.
 Utilisez composer update pour télécharger les dernières versions autorisées de vos dépendances et synchroniser votre fichier composer.lock.
 

@@ -464,10 +464,14 @@ legend {
 }
 
 #lien_action_admin {
+  display: inline-block;
+  background-color: #e8edf2;
+  border: 1px solid #64748b;
+  border-radius: 4px;
+  font-weight: bold;
   text-decoration: none;
   cursor: pointer;
-  border-radius: 5px;
-  background-color: whitesmoke;
+  transform: scale(0.85);
 }
 
 #bouton_action {
